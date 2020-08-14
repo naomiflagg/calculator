@@ -1,7 +1,11 @@
 // DOM variables
 const buttons = document.querySelectorAll("button");
 const display = document.querySelector("p");
-let stringOperator;
+const period = document.querySelector("#period");
+const operators = ["+", "x<sup>y</sup>", "÷", "-", "×"];
+let lastButtonPressed;
+let currScreen;
+let splitScreen = "default value";
 let operand1;
 let operand2;
 let operator;
@@ -15,7 +19,7 @@ buttons.forEach(button => {
 function identifyButton(button) {
   buttonPressed = this.textContent;
   buttonClass = this.getAttribute("class");
-  buttonID = this.getAttribute("ID");
+  buttonID = this.getAttribute("id");
   launchButtonFunction(buttonPressed);
 } 
 
@@ -35,61 +39,70 @@ function launchButtonFunction(button) {
       break;
     case "clear":
       resetValues();
-      display.textContent = "";
+      clearScreen();
       break;
     case "delete":
       manageDelete();
       break;
     case "ans":
-      //ans function
+      manageAns();
       break;
     case "period":
-      //period function
+      managePeriod();
       break;
   }
+  readyValues(buttonID);
 }
 
 function getOperands() {
-  let splitDisplay = display.textContent.split(stringOperator);
-  operand1 = Number(splitDisplay[splitDisplay.length - 2]);
-  operand2 = Number(splitDisplay[splitDisplay.length - 1]);
+  operand1 = Number(splitScreen[splitScreen.length - 3]);
+  operand2 = Number(splitScreen[splitScreen.length - 1]);
 }
 
 // Functions launched based on button pressed
 function manageNumber(number) {
-  if (!operator && answer) {
-    display.textContent = buttonPressed;
-    answer = 0;
+  if (lastButtonPressed === "equals") {
+    clearScreen();
+    addToScreen(buttonPressed);
+  }
+  else if (operators.includes(splitScreen[splitScreen.length - 1])) {
+    addToScreen(" ");
+    addToScreen(buttonPressed); 
   }
   else {
-    display.textContent += buttonPressed;
+    addToScreen(buttonPressed);
   }
 }
 
 function manageOperator() {
-  console.log(display.textContent);
-  if (display.textContent) {
-    display.textContent += " " + buttonPressed + " ";
+  if (currScreen) {
+    addToScreen(" ");
+    addToScreen(buttonPressed);
     operator = buttonID;
-    console.log(`operator: ${operator}`);
-    stringOperator = buttonPressed;
+    period.disabled = false;
   }
 }
 
 function manageEquals() {
-  console.log(display.textContent);
   getOperands();
   if (operand1) {
     operate(operator, operand1, operand2);
   }
-  else display.textContent = operand2;
+  else addToScreen(operand2);
 }
 
 function operate(operator, x, y=0) {
   answer = window[operator](x, y);
   display.textContent = answer;
+  ans = answer;
   resetValues();
 }
+
+
+function addToScreen(text) {
+  display.textContent += text;
+}
+
 
 function resetValues() {
   operator = null;
@@ -97,12 +110,43 @@ function resetValues() {
   operand2 = null;  
 }
 
-function manageDelete() {
-  //edit to delete two spaces if deleting operator
-  display.textContent = display.textContent.slice(0, -1); 
+function clearScreen() {
+  display.textContent = "";
 }
 
-// Basic operator functions
+function manageDelete() {
+  // fix to delete the the space before the number
+  if (operators.includes(splitScreen[splitScreen.length - 1])) {
+    display.textContent = currScreen.slice(0, -2);
+  }
+  else display.textContent = currScreen.slice(0, -1); 
+}
+
+function manageAns() {
+  display.textContent += answer;
+}
+
+function managePeriod() {
+  addToScreen(buttonPressed);
+  period.disabled = true;
+}
+
+function togglePeriod() {
+  if (period.disabled === true) {
+    if (buttonClass === "number" || buttonID === "period") return;
+    else period.disabled = false;
+  }
+}
+
+// Readies stored values for next button
+function readyValues(buttonID) {
+  lastButtonPressed = buttonID;
+  currScreen = display.textContent;
+  splitScreen = currScreen.split(" ");
+  togglePeriod()
+}
+
+// Basic operator functions called by operate function
 function add(x, y) {
 	return x + y;
 }
@@ -129,12 +173,11 @@ function power(x, y) {
 
 /* To do
 1. Deal with multi operator/number operations
-2. Deal with special buttons
-  2a. fix delete to delete two spaces if deleting operator
+2. Fix operators constant
+3. Fix delete so that it only erases one digit unless an operator
 3. Deal with multidigit numbers for operand1 (display issue)
 3. Round long decimals
-4. Add decimal function (if . is inputted) - make sure user doesn't 
-add more than 1 by disabling . button if there is already one
+4 Fix period such that can't add another if delete button is used
 5. Error handling
 6. Keyboard support if I have energy for it
 */
